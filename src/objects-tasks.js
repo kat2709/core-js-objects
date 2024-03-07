@@ -355,32 +355,90 @@ function group(array, keySelector, valueSelector) {
  */
 
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  str: '',
+  ops: [],
+  opsMap: {
+    element: 1,
+    id: 2,
+    class: 3,
+    attr: 4,
+    pseudoClass: 5,
+    pseudoElement: 6,
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  addOp(op) {
+    if ((op === 1 || op === 2 || op === 6) && this.ops.indexOf(op) >= 0) {
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    }
+    if (this.ops[this.ops.length - 1] > op) {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    }
+    this.ops.push(op);
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  element(val) {
+    this.addOp(1);
+    this.str += val;
+    return this.copy();
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  id(val) {
+    this.addOp(2);
+    this.str += `#${val}`;
+    return this.copy();
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  class(val) {
+    this.addOp(3);
+    this.str += `.${val}`;
+    return this.copy();
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  attr(val) {
+    this.addOp(4);
+    this.str += `[${val}]`;
+    return this.copy();
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  pseudoClass(val) {
+    this.addOp(5);
+    this.str += `:${val}`;
+    return this.copy();
+  },
+
+  pseudoElement(val) {
+    this.addOp(6);
+    this.str += `::${val}`;
+    return this.copy();
+  },
+
+  combine(selector1, combinator, selector2) {
+    this.str = `${selector1.stringify()} ${combinator} ${selector2.stringify()}`;
+    return this.copy();
+  },
+
+  stringify() {
+    const res = this.str;
+    this.clear();
+    return res;
+  },
+
+  copy() {
+    const res = Object.create(this);
+    res.str = this.str;
+    res.ops = this.ops;
+    res.opsMap = this.opsMap;
+    this.clear();
+    return res;
+  },
+
+  clear() {
+    this.str = '';
+    this.ops = [];
   },
 };
 
